@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Variables des graphiques — palette catégorielle validée (CVD-safe) :
+ * ordre fixe par entité : 1 Performance (bleu glacier), 2 Attitude (vert),
+ * 3 Sérieux (violet), 4 Implication (ambre). Les pas changent entre les
+ * modes, jamais l'affectation des teintes.
+ */
+:root {
+  --chart-s1: #1476a6;
+  --chart-s2: #16a34a;
+  --chart-s3: #7c3aed;
+  --chart-s4: #d97706;
+  --chart-grid: #e2e8f0;
+  --chart-text: #94a3b8;
+  --chart-ref: #cbd5e1;
+}
+
+.dark {
+  --chart-s1: #2394c4;
+  --chart-s2: #16a34a;
+  --chart-s3: #8b5cf6;
+  --chart-s4: #d97706;
+  --chart-grid: #1d2c40;
+  --chart-text: #64748b;
+  --chart-ref: #334155;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-night-900 dark:text-slate-100;
+  }
+  ::selection {
+    @apply bg-ice-200 dark:bg-ice-800;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar discrète */
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-300 dark:bg-night-700;
+  }
+}
