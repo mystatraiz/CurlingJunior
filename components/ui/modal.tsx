@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
+/**
+ * Fenêtre modale rendue via un portal sur document.body : elle échappe ainsi
+ * aux ancêtres portant une transformation CSS (cartes animées), qui sinon
+ * capturent le position:fixed — bug visible surtout sur iOS.
+ */
 export function Modal({
   open,
   onClose,
@@ -32,7 +38,7 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       role="dialog"
@@ -47,8 +53,8 @@ export function Modal({
       />
       <div
         className={cn(
-          'relative z-10 max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl bg-white',
-          'animate-scale-in shadow-2xl sm:m-4 sm:rounded-3xl dark:bg-night-800',
+          'relative z-10 max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white',
+          'animate-scale-in pb-[env(safe-area-inset-bottom)] shadow-2xl sm:m-4 sm:rounded-3xl dark:bg-night-800',
           wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'
         )}
       >
@@ -66,6 +72,7 @@ export function Modal({
         </div>
         <div className="p-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
