@@ -141,25 +141,17 @@ export function TrainingEditor({
         trainingId = (inserted as { id: string }).id;
       }
 
-      // Réécriture idempotente des présences et des notes.
-      const { error: delAtt } = await supabase
-        .from('attendance')
-        .delete()
-        .eq('training_id', trainingId!);
-      if (delAtt) throw new Error(delAtt.message);
-      const { error: delScores } = await supabase
-        .from('training_scores')
-        .delete()
-        .eq('training_id', trainingId!);
-      if (delScores) throw new Error(delScores.message);
-
+      // Écriture par upsert : on ne supprime jamais avant d'avoir réécrit,
+      // pour qu'une coupure réseau ne fasse perdre aucune donnée.
       const attendanceRows = players.map((p) => ({
         training_id: trainingId!,
         player_id: p.id,
         status: attendance[p.id],
       }));
-      const { error: insAtt } = await supabase.from('attendance').insert(attendanceRows);
-      if (insAtt) throw new Error(insAtt.message);
+      const { error: upAtt } = await supabase
+        .from('attendance')
+        .upsert(attendanceRows, { onConflict: 'training_id,player_id' });
+      if (upAtt) throw new Error(upAtt.message);
 
       const scoreRows = presentPlayers
         .map((p) => ({ p, d: scores[p.id] }))
@@ -181,11 +173,23 @@ export function TrainingEditor({
           comments: d.comments.trim() || null,
         }));
       if (scoreRows.length > 0) {
-        const { error: insScores } = await supabase
+        const { error: upScores } = await supabase
           .from('training_scores')
-          .insert(scoreRows);
-        if (insScores) throw new Error(insScores.message);
+          .upsert(scoreRows, { onConflict: 'training_id,player_id' });
+        if (upScores) throw new Error(upScores.message);
       }
+
+      // Purge des notes des joueurs qui ne sont plus présents ou plus notés.
+      const keepIds = scoreRows.map((r) => r.player_id);
+      let purge = supabase
+        .from('training_scores')
+        .delete()
+        .eq('training_id', trainingId!);
+      if (keepIds.length > 0) {
+        purge = purge.not('player_id', 'in', `(${keepIds.join(',')})`);
+      }
+      const { error: delScores } = await purge;
+      if (delScores) throw new Error(delScores.message);
 
       await refresh();
       router.push('/trainings');
