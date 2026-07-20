@@ -12,7 +12,7 @@ import { Field, Input, Select } from '@/components/ui/input';
 import { Segmented } from '@/components/ui/segmented';
 import { matchWinner } from '@/lib/stats';
 import { formatDate, formatNote, fullName } from '@/lib/format';
-import type { Dataset, Player } from '@/lib/types';
+import { MATCH_CATEGORY_LABELS, type Dataset, type Player } from '@/lib/types';
 
 type Tab = 'trainings' | 'scores' | 'matches' | 'attendance';
 
@@ -221,7 +221,9 @@ function HistoryContent({ data }: { data: Dataset }) {
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
                       {m.team_a_name} <span className="text-slate-400">vs</span> {m.team_b_name}
                     </p>
-                    <p className="text-xs text-slate-400">{formatDate(m.date)}</p>
+                    <p className="text-xs text-slate-400">
+                      {formatDate(m.date)} · {MATCH_CATEGORY_LABELS[m.category]}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold tabular-nums text-slate-900 dark:text-white">

@@ -97,6 +97,7 @@ create table public.matches (
   id           uuid primary key default gen_random_uuid(),
   season_id    uuid references public.seasons (id) on delete set null,
   date         date not null,
+  category     text not null default 'mixte' check (category in ('hommes', 'femmes', 'mixte')),
   team_a_name  text not null default 'Équipe A',
   team_b_name  text not null default 'Équipe B',
   score_a      integer not null default 0 check (score_a >= 0),

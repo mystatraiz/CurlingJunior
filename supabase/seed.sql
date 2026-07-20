@@ -58,11 +58,11 @@ from (
 where a.status = 'present';
 
 -- Matchs d'entraînement
-insert into public.matches (id, season_id, date, team_a_name, team_b_name, score_a, score_b) values
-  ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', '2026-06-20', 'Glace Bleue', 'Granit Rouge', 7, 5),
-  ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', '2026-06-27', 'Glace Bleue', 'Granit Rouge', 4, 8),
-  ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', '2026-07-04', 'Skip Nord',   'Skip Sud',     6, 6),
-  ('d0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000001', '2026-07-11', 'Skip Nord',   'Skip Sud',     9, 3);
+insert into public.matches (id, season_id, date, category, team_a_name, team_b_name, score_a, score_b) values
+  ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', '2026-06-20', 'mixte',  'Glace Bleue', 'Granit Rouge', 7, 5),
+  ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', '2026-06-27', 'mixte',  'Glace Bleue', 'Granit Rouge', 4, 8),
+  ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', '2026-07-04', 'femmes', 'Skip Nord',   'Skip Sud',     6, 6),
+  ('d0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000001', '2026-07-11', 'hommes', 'Skip Nord',   'Skip Sud',     9, 3);
 
 insert into public.match_players (match_id, player_id, team) values
   -- Match 1

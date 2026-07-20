@@ -22,6 +22,7 @@ function PlayersContent({ data }: { data: Dataset }) {
   const { period } = usePeriod();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [sex, setSex] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
 
   const stats = useMemo(() => allPlayerStats(data, period), [data, period]);
@@ -30,6 +31,7 @@ function PlayersContent({ data }: { data: Dataset }) {
     const name = fullName(s.player).toLowerCase();
     if (query && !name.includes(query.toLowerCase())) return false;
     if (category && s.player.category !== category) return false;
+    if (sex && s.player.sex !== sex) return false;
     return true;
   });
 
@@ -67,6 +69,11 @@ function PlayersContent({ data }: { data: Dataset }) {
               {c}
             </option>
           ))}
+        </Select>
+        <Select value={sex} onChange={(e) => setSex(e.target.value)} className="w-32">
+          <option value="">Tous</option>
+          <option value="M">Hommes</option>
+          <option value="F">Femmes</option>
         </Select>
       </div>
 

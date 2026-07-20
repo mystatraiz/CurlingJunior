@@ -64,8 +64,13 @@ function subLabel(s: PlayerStats, key: RankingKey): string {
 function RankingsContent({ data }: { data: Dataset }) {
   const { period } = usePeriod();
   const [tab, setTab] = useState<RankingKey>('general');
+  const [sex, setSex] = useState<'all' | 'M' | 'F'>('all');
   const stats = useMemo(() => allPlayerStats(data, period), [data, period]);
-  const ranked = ranking(stats, tab).filter((s) => rankingValue(s, tab) !== null);
+  const filteredStats =
+    sex === 'all' ? stats : stats.filter((s) => s.player.sex === sex);
+  const ranked = ranking(filteredStats, tab).filter(
+    (s) => rankingValue(s, tab) !== null
+  );
   const w = data.settings.weights;
 
   return (
@@ -81,8 +86,20 @@ function RankingsContent({ data }: { data: Dataset }) {
         }
       />
 
-      <div className="scrollbar-thin mb-5 overflow-x-auto pb-1">
+      <div className="scrollbar-thin mb-3 overflow-x-auto pb-1">
         <Segmented<RankingKey> options={TABS} value={tab} onChange={setTab} />
+      </div>
+      <div className="mb-5">
+        <Segmented<'all' | 'M' | 'F'>
+          size="sm"
+          value={sex}
+          onChange={setSex}
+          options={[
+            { value: 'all', label: 'Tout le collectif' },
+            { value: 'M', label: 'Hommes' },
+            { value: 'F', label: 'Femmes' },
+          ]}
+        />
       </div>
 
       {ranked.length === 0 ? (

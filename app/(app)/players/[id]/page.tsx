@@ -45,7 +45,7 @@ import {
   formatPercent,
   fullName,
 } from '@/lib/format';
-import type { Dataset } from '@/lib/types';
+import { MATCH_CATEGORY_LABELS, type Dataset } from '@/lib/types';
 
 function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -333,7 +333,9 @@ function PlayerContent({ data, playerId }: { data: Dataset; playerId: string }) 
                           {m.team_a_name} <span className="text-slate-400">vs</span>{' '}
                           {m.team_b_name}
                         </p>
-                        <p className="text-xs text-slate-400">{formatDate(m.date)}</p>
+                        <p className="text-xs text-slate-400">
+                          {formatDate(m.date)} · {MATCH_CATEGORY_LABELS[m.category]}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold tabular-nums text-slate-900 dark:text-white">

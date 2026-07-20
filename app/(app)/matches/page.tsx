@@ -11,13 +11,31 @@ import { Card, CardBody } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Field, Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { Segmented } from '@/components/ui/segmented';
 import { useAuth } from '@/components/providers/auth-provider';
 import { useData } from '@/components/providers/data-provider';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { matchWinner, seasonMatches } from '@/lib/stats';
 import { formatDate, fullName, todayISO } from '@/lib/format';
 import { cn } from '@/lib/cn';
-import type { Dataset, Match, TeamSide } from '@/lib/types';
+import {
+  MATCH_CATEGORY_LABELS,
+  type Dataset,
+  type Match,
+  type MatchCategory,
+  type TeamSide,
+} from '@/lib/types';
+
+const CATEGORY_OPTIONS: Array<{ value: MatchCategory; label: string }> = [
+  { value: 'hommes', label: 'Hommes' },
+  { value: 'femmes', label: 'Femmes' },
+  { value: 'mixte', label: 'Mixte' },
+];
+
+function CategoryBadge({ category }: { category: MatchCategory }) {
+  const tones = { hommes: 'ice', femmes: 'amber', mixte: 'green' } as const;
+  return <Badge tone={tones[category]}>{MATCH_CATEGORY_LABELS[category]}</Badge>;
+}
 
 function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
   const { refresh } = useData();
@@ -25,6 +43,7 @@ function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     date: todayISO(),
+    category: 'mixte' as MatchCategory,
     team_a_name: 'Équipe A',
     team_b_name: 'Équipe B',
     score_a: 0,
@@ -50,6 +69,7 @@ function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
         .from('matches')
         .insert({
           date: form.date,
+          category: form.category,
           team_a_name: form.team_a_name,
           team_b_name: form.team_b_name,
           score_a: form.score_a,
@@ -87,6 +107,16 @@ function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
           onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
         />
       </Field>
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+          Catégorie du match
+        </p>
+        <Segmented<MatchCategory>
+          value={form.category}
+          onChange={(v) => setForm((f) => ({ ...f, category: v }))}
+          options={CATEGORY_OPTIONS}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Équipe A">
           <Input
@@ -227,7 +257,10 @@ function MatchCard({ data, match }: { data: Dataset; match: Match }) {
   return (
     <Card className="animate-fade-up p-4">
       <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
-        <span>{formatDate(match.date)}</span>
+        <span className="flex items-center gap-2">
+          {formatDate(match.date)}
+          <CategoryBadge category={match.category} />
+        </span>
         <div className="flex items-center gap-2">
           {winner === null ? (
             <Badge tone="slate">Égalité</Badge>
@@ -274,7 +307,10 @@ function MatchCard({ data, match }: { data: Dataset; match: Match }) {
 
 function MatchesContent({ data }: { data: Dataset }) {
   const [createOpen, setCreateOpen] = useState(false);
-  const matches = useMemo(() => [...seasonMatches(data)].reverse(), [data]);
+  const [filter, setFilter] = useState<'all' | MatchCategory>('all');
+  const allMatches = useMemo(() => [...seasonMatches(data)].reverse(), [data]);
+  const matches =
+    filter === 'all' ? allMatches : allMatches.filter((m) => m.category === filter);
 
   return (
     <>
@@ -287,6 +323,14 @@ function MatchesContent({ data }: { data: Dataset }) {
           </Button>
         }
       />
+
+      <div className="mb-4">
+        <Segmented<'all' | MatchCategory>
+          value={filter}
+          onChange={setFilter}
+          options={[{ value: 'all', label: 'Tous' }, ...CATEGORY_OPTIONS]}
+        />
+      </div>
 
       {matches.length === 0 ? (
         <EmptyState

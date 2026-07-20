@@ -7,6 +7,13 @@ export type Sex = 'M' | 'F';
 export type Hand = 'droite' | 'gauche' | 'ambidextre';
 export type AttendanceStatus = 'present' | 'absent' | 'excused';
 export type TeamSide = 'A' | 'B';
+export type MatchCategory = 'hommes' | 'femmes' | 'mixte';
+
+export const MATCH_CATEGORY_LABELS: Record<MatchCategory, string> = {
+  hommes: 'Hommes',
+  femmes: 'Femmes',
+  mixte: 'Mixte',
+};
 
 /** Période de consultation des statistiques et classements. */
 export type Period = 'last3' | 'season';
@@ -79,6 +86,8 @@ export interface Match {
   id: string;
   season_id: string | null;
   date: string;
+  /** Catégorie du match : hommes, femmes ou mixte. */
+  category: MatchCategory;
   team_a_name: string;
   team_b_name: string;
   score_a: number;
