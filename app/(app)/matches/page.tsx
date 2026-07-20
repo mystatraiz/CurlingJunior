@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, Swords, Trash2, Trophy } from 'lucide-react';
+import { ClipboardList, Pencil, Plus, Swords, Trash2, Trophy } from 'lucide-react';
 import { DataGate } from '@/components/shared/data-gate';
 import { PageHeader } from '@/components/shared/page-header';
 import { Avatar } from '@/components/ui/avatar';
@@ -37,19 +38,38 @@ function CategoryBadge({ category }: { category: MatchCategory }) {
   return <Badge tone={tones[category]}>{MATCH_CATEGORY_LABELS[category]}</Badge>;
 }
 
-function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
+function MatchForm({
+  data,
+  match,
+  onDone,
+}: {
+  data: Dataset;
+  /** Match existant à modifier (absent = création). */
+  match?: Match;
+  onDone: () => void;
+}) {
   const { refresh } = useData();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    date: todayISO(),
-    category: 'mixte' as MatchCategory,
-    team_a_name: 'Équipe A',
-    team_b_name: 'Équipe B',
-    score_a: 0,
-    score_b: 0,
+    date: match?.date ?? todayISO(),
+    category: (match?.category ?? 'mixte') as MatchCategory,
+    team_a_name: match?.team_a_name ?? 'Équipe A',
+    team_b_name: match?.team_b_name ?? 'Équipe B',
+    score_a: match?.score_a ?? 0,
+    score_b: match?.score_b ?? 0,
   });
-  const [teams, setTeams] = useState<Record<string, TeamSide | null>>({});
+  const [teams, setTeams] = useState<Record<string, TeamSide | null>>(() => {
+    if (!match) return {};
+    const map: Record<string, TeamSide | null> = {};
+    for (const mp of data.matchPlayers) {
+      if (mp.match_id === match.id) map[mp.player_id] = mp.team;
+    }
+    return map;
+  });
+
+  // Pont vers la notation : l'entraînement du même jour, s'il existe.
+  const sameDayTraining = data.trainings.find((t) => t.date === form.date);
 
   const players = data.players
     .filter((p) => p.is_active)
@@ -65,29 +85,50 @@ function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
     setError(null);
     const supabase = getSupabaseBrowser();
     try {
-      const { data: inserted, error: err } = await supabase
-        .from('matches')
-        .insert({
-          date: form.date,
-          category: form.category,
-          team_a_name: form.team_a_name,
-          team_b_name: form.team_b_name,
-          score_a: form.score_a,
-          score_b: form.score_b,
-          season_id: data.activeSeason?.id ?? null,
-        })
-        .select('id')
-        .single();
-      if (err) throw new Error(err.message);
-      const matchId = (inserted as { id: string }).id;
+      const payload = {
+        date: form.date,
+        category: form.category,
+        team_a_name: form.team_a_name,
+        team_b_name: form.team_b_name,
+        score_a: form.score_a,
+        score_b: form.score_b,
+      };
+
+      let matchId = match?.id;
+      if (match) {
+        const { error: err } = await supabase
+          .from('matches')
+          .update(payload)
+          .eq('id', match.id);
+        if (err) throw new Error(err.message);
+      } else {
+        const { data: inserted, error: err } = await supabase
+          .from('matches')
+          .insert({ ...payload, season_id: data.activeSeason?.id ?? null })
+          .select('id')
+          .single();
+        if (err) throw new Error(err.message);
+        matchId = (inserted as { id: string }).id;
+      }
 
       const rows = Object.entries(teams)
         .filter((entry): entry is [string, TeamSide] => entry[1] !== null)
-        .map(([player_id, team]) => ({ match_id: matchId, player_id, team }));
+        .map(([player_id, team]) => ({ match_id: matchId!, player_id, team }));
       if (rows.length > 0) {
-        const { error: mpErr } = await supabase.from('match_players').insert(rows);
+        const { error: mpErr } = await supabase
+          .from('match_players')
+          .upsert(rows, { onConflict: 'match_id,player_id' });
         if (mpErr) throw new Error(mpErr.message);
       }
+      // Retire les joueurs décochés.
+      const keepIds = rows.map((r) => r.player_id);
+      let purge = supabase.from('match_players').delete().eq('match_id', matchId!);
+      if (keepIds.length > 0) {
+        purge = purge.not('player_id', 'in', `(${keepIds.join(',')})`);
+      }
+      const { error: delErr } = await purge;
+      if (delErr) throw new Error(delErr.message);
+
       await refresh();
       onDone();
     } catch (err) {
@@ -99,6 +140,21 @@ function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      {match && (
+        <Link
+          href={
+            sameDayTraining
+              ? `/trainings/${sameDayTraining.id}`
+              : `/trainings/new?date=${form.date}`
+          }
+          className="flex items-center gap-2.5 rounded-xl bg-ice-50 p-3.5 text-xs font-semibold text-ice-700 transition-colors hover:bg-ice-100 dark:bg-ice-950 dark:text-ice-300 dark:hover:bg-ice-900"
+        >
+          <ClipboardList className="h-4 w-4 shrink-0" />
+          {sameDayTraining
+            ? 'Noter les joueurs → ouvrir l’entraînement du même jour'
+            : 'Noter les joueurs → créer l’entraînement du même jour'}
+        </Link>
+      )}
       <Field label="Date">
         <Input
           type="date"
@@ -200,7 +256,11 @@ function MatchForm({ data, onDone }: { data: Dataset; onDone: () => void }) {
           Annuler
         </Button>
         <Button type="submit" disabled={busy}>
-          {busy ? 'Enregistrement…' : 'Enregistrer le match'}
+          {busy
+            ? 'Enregistrement…'
+            : match
+              ? 'Enregistrer les modifications'
+              : 'Enregistrer le match'}
         </Button>
       </div>
     </form>
@@ -211,6 +271,7 @@ function MatchCard({ data, match }: { data: Dataset; match: Match }) {
   const { isAdmin } = useAuth();
   const { refresh } = useData();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const winner = matchWinner(match);
 
   const roster = (side: TeamSide) =>
@@ -269,6 +330,13 @@ function MatchCard({ data, match }: { data: Dataset; match: Match }) {
               Vainqueur : {winner === 'A' ? match.team_a_name : match.team_b_name}
             </Badge>
           )}
+          <button
+            onClick={() => setEditOpen(true)}
+            className="rounded-lg p-1 text-slate-300 transition-colors hover:bg-ice-50 hover:text-ice-600 dark:hover:bg-ice-950"
+            title="Modifier le match"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
           {isAdmin && (
             <button
               onClick={() => setConfirmOpen(true)}
@@ -280,13 +348,22 @@ function MatchCard({ data, match }: { data: Dataset; match: Match }) {
           )}
         </div>
       </div>
-      <div className="mt-3 flex items-start gap-4">
+      <button
+        type="button"
+        onClick={() => setEditOpen(true)}
+        className="mt-3 flex w-full items-start gap-4 rounded-xl text-left transition-colors hover:bg-slate-50/70 dark:hover:bg-night-700/40"
+        title="Modifier le match ou noter les joueurs"
+      >
         <TeamCol side="A" />
         <div className="shrink-0 rounded-xl bg-slate-50 px-3 py-1.5 text-lg font-bold tabular-nums text-slate-900 dark:bg-night-850 dark:text-white">
           {match.score_a}–{match.score_b}
         </div>
         <TeamCol side="B" />
-      </div>
+      </button>
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Modifier le match" wide>
+        <MatchForm data={data} match={match} onDone={() => setEditOpen(false)} />
+      </Modal>
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Supprimer le match">
         <p className="text-sm text-slate-600 dark:text-slate-300">

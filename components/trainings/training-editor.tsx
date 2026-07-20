@@ -46,9 +46,12 @@ const STATUS_META: Array<{
 export function TrainingEditor({
   data,
   training,
+  initialDate,
 }: {
   data: Dataset;
   training?: Training;
+  /** Date pré-remplie à la création (ex. depuis un match). */
+  initialDate?: string;
 }) {
   const router = useRouter();
   const { refresh } = useData();
@@ -61,7 +64,7 @@ export function TrainingEditor({
     [data.players]
   );
 
-  const [date, setDate] = useState(training?.date ?? todayISO());
+  const [date, setDate] = useState(training?.date ?? initialDate ?? todayISO());
   const [location, setLocation] = useState(training?.location ?? '');
   const [comments, setComments] = useState(training?.comments ?? '');
   const [busy, setBusy] = useState(false);
