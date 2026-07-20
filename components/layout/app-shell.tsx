@@ -43,7 +43,7 @@ function Sidebar() {
   const pathname = usePathname();
   const { profile, isAdmin, signOut } = useAuth();
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl lg:flex dark:border-night-700/60 dark:bg-night-900/80">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200/70 bg-white/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:flex dark:border-night-700/60 dark:bg-night-900/80">
       <div className="px-5 py-6">
         <BrandMark />
       </div>
@@ -183,7 +183,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 function Header() {
   const { theme, toggle } = useTheme();
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/75 backdrop-blur-xl dark:border-night-700/60 dark:bg-night-900/75">
+    <header className="sticky top-0 z-20 border-b border-slate-200/60 bg-white/75 pt-[env(safe-area-inset-top)] backdrop-blur-xl dark:border-night-700/60 dark:bg-night-900/75">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="lg:hidden">
           <BrandMark compact />

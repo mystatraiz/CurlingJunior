@@ -63,7 +63,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-slate-50 via-ice-50 to-ice-100 p-4 dark:from-night-900 dark:via-night-900 dark:to-ice-950">
+    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-slate-50 via-ice-50 to-ice-100 p-4 pt-[max(1rem,env(safe-area-inset-top))] dark:from-night-900 dark:via-night-900 dark:to-ice-950">
       <div className="w-full max-w-sm animate-fade-up">
         <div className="mb-8 flex flex-col items-center text-center">
           <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-ice-400 to-ice-700 text-white shadow-lg shadow-ice-600/25">
